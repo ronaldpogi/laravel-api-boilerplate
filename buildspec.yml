@@ -1,36 +1,26 @@
 version: 0.2
 
-env:
-  variables:
-    AWS_ACCOUNT_ID: "6376-1269-3748"
-    ECR_REPOSITORY: "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com"                # registry only
-    ECR_REPOSITORY_URI: "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/my-laravel-api" # full repo URI
-
 phases:
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY
-      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
-      - IMAGE_TAG=${COMMIT_HASH:=latest}
   build:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
       - cd backend
       - aws s3 cp s3://laravel-backend-env/env.prod .env
-      - docker build -t $ECR_REPOSITORY_URI:$IMAGE_TAG .
-      - docker tag $ECR_REPOSITORY_URI:$IMAGE_TAG $ECR_REPOSITORY_URI:latest
+      - docker build -t $ECR_REPOSITORY:latest .
+      - docker tag $ECR_REPOSITORY:latest $ECR_REPOSITORY:latest
   post_build:
     commands:
       - echo Build completed on `date`
       - echo Pushing the Docker image...
-      - docker push $ECR_REPOSITORY_URI:$IMAGE_TAG
-      - docker push $ECR_REPOSITORY_URI:latest
-      - echo Creating imagedefinitions.json for ECS...
-      - printf '[{"name":"my-laravel-app","imageUri":"%s"}]' $ECR_REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+      - docker push $ECR_REPOSITORY:latest
       - echo Running Laravel migrations and seeding...
-      - docker run --rm $ECR_REPOSITORY_URI:$IMAGE_TAG php artisan migrate --force
-      - docker run --rm $ECR_REPOSITORY_URI:$IMAGE_TAG php artisan db:seed --force
+      - cp $CODEBUILD_SRC_DIR/backend/imagedefinitions.json $CODEBUILD_SRC_DIR/
+      - docker run --rm $ECR_REPOSITORY:latest php artisan migrate:fresh --force
+      - docker run --rm $ECR_REPOSITORY:latest php artisan db:seed --force
 artifacts:
   files: imagedefinitions.json
