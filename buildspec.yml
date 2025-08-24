@@ -22,7 +22,7 @@ phases:
       - docker push $ECR_REPOSITORY:$IMAGE_TAG
       - docker push $ECR_REPOSITORY:latest
       - echo Creating imagedefinitions.json for ECS...
-      - printf '[{"name":"my-laravel-app","imageUri":"%s"}]' $ECR_REPOSITORY:$IMAGE_TAG > imagedefinitions.json
+      - printf '[{"name":"my-laravel-api","imageUri":"%s"}]' $ECR_REPOSITORY:$IMAGE_TAG > imagedefinitions.json
       - echo Running Laravel migrations and seeding...
       - docker run --rm $ECR_REPOSITORY:$IMAGE_TAG php artisan migrate --force
       - docker run --rm $ECR_REPOSITORY:$IMAGE_TAG php artisan db:seed --force
