@@ -18,9 +18,8 @@ phases:
       - echo Build completed on `date`
       - echo Pushing the Docker image...
       - docker push $ECR_REPOSITORY:latest
-      - echo Running Laravel migrations and seeding...
+      - echo Creating imagedefinitions.json for ECS...
       - cp $CODEBUILD_SRC_DIR/backend/imagedefinitions.json $CODEBUILD_SRC_DIR/
-      - docker run --rm $ECR_REPOSITORY:latest php artisan migrate:fresh --force
-      - docker run --rm $ECR_REPOSITORY:latest php artisan db:seed --force
+
 artifacts:
   files: imagedefinitions.json
